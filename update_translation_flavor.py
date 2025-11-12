@@ -13,12 +13,16 @@ with open('data_sorted_cultures.csv', 'r', encoding='utf-8-sig') as f:
         hpe_enabled = row.get('HPE Enabled', '').strip().upper()
         
         # Apply the new logic
+        # QE=TRUE + HPE=TRUE → HPE
+        # QE=TRUE + HPE=FALSE → AIPE
+        # QE=FALSE + HPE=TRUE → HPE
+        # QE=FALSE + HPE=FALSE → MT
         if qe_enabled == 'TRUE' and hpe_enabled == 'TRUE':
             row['TranslationFlavor'] = 'HPE'
         elif qe_enabled == 'TRUE' and hpe_enabled == 'FALSE':
             row['TranslationFlavor'] = 'AIPE'
         elif qe_enabled == 'FALSE' and hpe_enabled == 'TRUE':
-            row['TranslationFlavor'] = 'MTPE'
+            row['TranslationFlavor'] = 'HPE'
         elif qe_enabled == 'FALSE' and hpe_enabled == 'FALSE':
             row['TranslationFlavor'] = 'MT'
         else:
