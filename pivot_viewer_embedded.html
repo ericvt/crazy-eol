@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Culture Group Pivot Table</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #fafafa;
+            color: #333;
+            padding: 8px 15px;
+            text-align: center;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .header h1 {
+            font-size: 1em;
+            margin-bottom: 0;
+            text-align: left;
+        }
+        
+        .header p {
+            display: none;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 15px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 8px 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            flex: 1;
+        }
+        
+        .stat-card .number {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-card .label {
+            color: #6c757d;
+            margin-top: 3px;
+            font-size: 0.7em;
+        }
+        
+        .controls {
+            display: none;
+        }
+        
+        .controls input {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .controls input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .controls select {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .controls button:hover {
+            background: #5568d3;
+        }
+        
+        .table-container {
+            overflow: auto;
+            max-height: calc(100vh - 90px);
+            position: relative;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: visible;
+        }
+        
+        th, td {
+            padding: 1px 2px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            white-space: nowrap;
+            font-size: 0.55em;
+            line-height: 1;
+        }
+        
+        th.tenant-header {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding: 6px 1px;
+            font-size: 0.45em;
+            min-width: 18px;
+            max-width: 20px;
+            height: 120px;
+            vertical-align: bottom;
+            position: relative;
+            cursor: help;
+            overflow: visible;
+        }
+        
+        th.tenant-header:hover::after {
+            content: attr(data-full-name);
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 6px 10px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 10000;
+            writing-mode: horizontal-tb;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 5px;
+            font-size: 1.6em;
+            max-width: none;
+            width: auto;
+        }
+        
+        th.count-header {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            padding: 6px 1px;
+            font-size: 0.45em;
+            min-width: 18px;
+            max-width: 20px;
+            height: 120px;
+            vertical-align: bottom;
+        }
+        
+        th.total-header {
+            padding: 3px 4px;
+            font-size: 0.5em;
+            min-width: 30px;
+            text-align: center;
+            background: #f5f5f5 !important;
+        }
+        
+        td.total-cell {
+            padding: 1px 4px;
+            text-align: center;
+            font-size: 0.65em;
+            font-weight: 700;
+            min-width: 30px;
+            background: #e9ecef;
+            color: #333;
+            border-left: 2px solid #dee2e6;
+        }
+        
+        tr.total-row {
+            background: #fafafa;
+            font-weight: bold;
+            border-top: 3px solid #dee2e6;
+            border-bottom: 3px solid #dee2e6;
+        }
+        
+        tr.total-row td.sticky-col {
+            background: #f5f5f5;
+        }
+        
+        tr.total-row td.total-cell {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        td.tenant-cell {
+            padding: 1px 1px;
+            min-width: 18px;
+            max-width: 20px;
+            font-size: 0.6em;
+            font-weight: 600;
+            line-height: 1;
+            color: #333;
+        }
+        
+        td.sticky-col {
+            font-size: 0.6em;
+            padding: 1px 4px;
+            line-height: 1;
+        }
+        
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            white-space: nowrap;
+            padding: 4px 2px;
+            font-size: 0.45em;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: help;
+        }
+        
+        .vertical-text .truncated {
+            display: block;
+        }
+        
+        .vertical-text .full-text {
+            display: none;
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 6px 10px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1000;
+            writing-mode: horizontal-tb;
+            transform: none;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 5px;
+            font-size: 1.4em;
+        }
+        
+        .vertical-text:hover .full-text {
+            display: block;
+        }
+        
+        .count-cell {
+            padding: 1px 2px;
+            text-align: center;
+            font-size: 0.6em;
+            min-width: 18px;
+            max-width: 20px;
+            cursor: help;
+            position: relative;
+            line-height: 1;
+            color: #333;
+        }
+        
+        .count-cell:hover {
+            background: #f8f9fa;
+        }
+        
+        .culture-tooltip {
+            display: none;
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            line-height: 1.6;
+            z-index: 1000;
+            min-width: 250px;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 1px solid #666;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        .culture-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #1a1a1a;
+        }
+        
+        .count-cell:hover .culture-tooltip {
+            display: block;
+        }
+        
+        .count-badge {
+            display: none;
+        }
+        
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            overflow: visible;
+        }
+        
+        th {
+            background: #fafafa;
+            color: #333;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.5em;
+            letter-spacing: 0.2px;
+            padding: 3px 2px;
+            line-height: 1;
+        }
+        
+        th.sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 11;
+        }
+        
+        td.sticky-col {
+            position: sticky;
+            left: 0;
+            background: #f1f3f5;
+            font-weight: 600;
+            color: #333;
+            z-index: 5;
+            border-right: 2px solid #dee2e6;
+        }
+        
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        tbody tr:hover td.sticky-col {
+            background: #e9ecef;
+        }
+        
+        .number-cell {
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .number-cell.has-value {
+            background: #e7f5ff;
+            color: #333;
+        }
+        
+        .number-cell.high-value {
+            background: #d0ebff;
+            color: #333;
+        }
+        
+        .number-cell.very-high-value {
+            background: #a5d8ff;
+            color: #333;
+        }
+        
+        /* Translation Flavor Colors */
+        .flavor-mt {
+            background: #ff6b6b !important;
+            color: white !important;
+        }
+        
+        .flavor-aipe {
+            background: #9775fa !important;
+            color: white !important;
+        }
+        
+        .flavor-mtpe {
+            background: #ffd43b !important;
+            color: #333 !important;
+        }
+        
+        .flavor-hpe {
+            background: #51cf66 !important;
+            color: white !important;
+        }
+        
+        .flavor-ht {
+            background: #2b8a3e !important;
+            color: white !important;
+        }
+        
+        /* QE/HPE Colors */
+        .qe-false-hpe-false {
+            background: #1e3a5f !important;
+            color: white !important;
+        }
+        
+        .qe-true-hpe-false {
+            background: #4dabf7 !important;
+            color: white !important;
+        }
+        
+        .qe-true-hpe-true {
+            background: #9775fa !important;
+            color: white !important;
+        }
+        
+        .cultures-cell {
+            max-width: 400px;
+            font-size: 0.85em;
+            color: #6c757d;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        .count-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .filter-info {
+            padding: 10px 30px;
+            background: #fff3cd;
+            color: #856404;
+            border-bottom: 1px solid #ffc107;
+            display: none;
+        }
+        
+        .filter-info.active {
+            display: block;
+        }
+        
+        .no-results {
+            padding: 60px 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 1.2em;
+        }
+        
+        .legend {
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 0.65em;
+            color: #495057;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Tenant Culture Group Analysis</h1>
+            <p>Interactive Pivot Table Visualization</p>
+        </div>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="number" id="totalCultureGroups">0</div>
+                <div class="label">Language Groupings</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalTenants">0</div>
+                <div class="label">Tenants</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalBranches">0</div>
+                <div class="label">Branches</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="🔍 Search culture groups, cultures, or tenants...">
+            <select id="filterCultures">
+                <option value="">All Culture Counts</option>
+                <option value="1">1 Culture</option>
+                <option value="2-5">2-5 Cultures</option>
+                <option value="6-10">6-10 Cultures</option>
+                <option value="11-20">11-20 Cultures</option>
+                <option value="21+">21+ Cultures</option>
+            </select>
+            <button onclick="resetFilters()">Clear Filters</button>
+        </div>
+        
+        <div class="filter-info" id="filterInfo"></div>
+        
+        <div class="table-container">
+            <table id="pivotTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div class="no-results" id="noResults" style="display: none;">
+                No results found. Try adjusting your filters.
+            </div>
+        </div>
+        
+        <div class="legend">
+            <strong>Color Legend:</strong>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #ff6b6b;"></div>
+                <span>MT (Machine Translation)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #9775fa;"></div>
+                <span>AIPE (AI Post-Edit)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #ffd43b;"></div>
+                <span>MTPE (MT Post-Edit)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #51cf66;"></div>
+                <span>HPE (Human Post-Edit)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: #2b8a3e;"></div>
+                <span>HT (Human Translation)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let tenantNames = [];
+        let uniqueBranches = new Set();
+
+        // Load and parse CSV
+        async function loadCSV() {
+            // First try to fetch from URL
+            try {
+                const response = await fetch('tenant_culture_group_pivot.csv');
+                if (response.ok) {
+                    const text = await response.text();
+                    parseCSV(text);
+                    
+                    // Also load the original data to count unique branches
+                    await loadOriginalData();
+                    return;
+                }
+            } catch (error) {
+                console.log('Fetch failed, showing file upload option');
+            }
+            
+            // If fetch fails, show file upload interface
+            showFileUpload();
+        }
+        
+        async function loadOriginalData() {
+            console.log('Starting to load original data...');
+            try {
+                const response = await fetch('data_sorted_cultures.csv');
+                console.log('Fetch response status:', response.status, response.ok);
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    console.log('Loaded data, text length:', text.length);
+                    const lines = text.trim().split('\n');
+                    console.log('Total lines:', lines.length);
+                    
+                    // Parse header to find Branch column index
+                    const headerLine = lines[0];
+                    const headers = parseCSVLine(headerLine);
+                    console.log('Headers:', headers);
+                    const branchIndex = headers.findIndex(h => h.toLowerCase().trim() === 'branch');
+                    console.log('Branch column index:', branchIndex);
+                    
+                    if (branchIndex !== -1) {
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = parseCSVLine(lines[i]);
+                            const branch = values[branchIndex];
+                            if (branch && branch.trim()) {
+                                uniqueBranches.add(branch.trim());
+                            }
+                        }
+                        console.log('Unique branches found:', uniqueBranches.size);
+                        console.log('Sample branches:', Array.from(uniqueBranches).slice(0, 5));
+                        // Update just the branches stat
+                        document.getElementById('totalBranches').textContent = uniqueBranches.size;
+                    } else {
+                        console.log('Branch column not found in headers');
+                    }
+                } else {
+                    console.log('Failed to fetch data_sorted_cultures.csv');
+                }
+            } catch (error) {
+                console.log('Error loading original data file:', error);
+            }
+        }
+
+        function showFileUpload() {
+            const container = document.querySelector('.table-container');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 30px;">
+                    <h2 style="color: #495057; margin-bottom: 20px;">📂 Load CSV File</h2>
+                    <p style="color: #6c757d; margin-bottom: 30px;">Please select the tenant_culture_group_pivot.csv file</p>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                    <button onclick="document.getElementById('csvFileInput').click()" 
+                            style="padding: 15px 30px; background: #667eea; color: white; border: none; 
+                                   border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                        Choose File
+                    </button>
+                </div>
+            `;
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    // Restore the table container
+                    const container = document.querySelector('.table-container');
+                    container.innerHTML = `
+                        <table id="pivotTable">
+                            <thead id="tableHead"></thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                        <div class="no-results" id="noResults" style="display: none;">
+                            No results found. Try adjusting your filters.
+                        </div>
+                    `;
+                    parseCSV(text);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = parseCSVLine(lines[0]);
+            
+            // Extract tenant names (skip first 3 columns: Culture Group, Number of Cultures, Cultures)
+            const rawTenantNames = headers.slice(3);
+            
+            allData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length > 0) {
+                    const branchData = values.slice(3).map(v => {
+                        if (!v) return { count: 0 };
+                        
+                        // Parse format: count|flavor|qe_hpe_false|qe_hpe_true
+                        const parts = v.split('|');
+                        if (parts.length === 4) {
+                            return {
+                                count: parseInt(parts[0]) || 0,
+                                flavor: parts[1] || '',
+                                qeHpeFalse: parseInt(parts[2]) || 0,
+                                qeHpeTrue: parseInt(parts[3]) || 0
+                            };
+                        }
+                        // Fallback for old format (just numbers)
+                        return { count: parseInt(v) || 0 };
+                    });
+                    
+                    allData.push({
+                        cultureGroup: values[0],
+                        numCultures: parseInt(values[1]) || 0,
+                        cultures: values[2] || '',
+                        branches: branchData
+                    });
+                }
+            }
+            
+            // Calculate total for each tenant and sort by total (ascending)
+            const tenantTotals = rawTenantNames.map((name, index) => {
+                let total = 0;
+                allData.forEach(row => {
+                    total += row.branches[index]?.count || 0;
+                });
+                return { name, index, total };
+            });
+            
+            // Sort by total (ascending - lowest to highest)
+            tenantTotals.sort((a, b) => a.total - b.total);
+            
+            // Reorder tenant names and branch data
+            tenantNames = tenantTotals.map(t => t.name);
+            const indexMap = tenantTotals.map(t => t.index);
+            
+            // Reorder branches in each row according to sorted tenant order
+            allData.forEach(row => {
+                const reorderedBranches = indexMap.map(oldIndex => row.branches[oldIndex]);
+                row.branches = reorderedBranches;
+            });
+            
+            filteredData = [...allData];
+            renderTable();
+            updateStats(); // Update stats with culture groups and tenants
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function renderTable() {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            const noResults = document.getElementById('noResults');
+            
+            // Render header
+            let headerHTML = '<tr style="background: #fafafa; height: 40px;">';
+            headerHTML += '<th class="sticky-col" style="background: #fafafa; border-bottom: 2px solid #dee2e6;"></th>';
+            headerHTML += '<th style="background: #fafafa; border-bottom: 2px solid #dee2e6;"></th>';
+            headerHTML += `<th colspan="${tenantNames.length}" style="background: #fafafa; text-align: center; font-size: 0.65em; padding: 10px 4px; color: #6c757d; border-left: 3px solid #adb5bd; border-bottom: 2px solid #dee2e6;">Tenants</th>`;
+            headerHTML += '<th style="background: #fafafa; border-bottom: 2px solid #dee2e6;"></th>';
+            headerHTML += '</tr>';
+            
+            headerHTML += '<tr>';
+            headerHTML += '<th class="sticky-col" style="font-size: 0.7em;">Culture Group ↓</th>';
+            headerHTML += '<th class="count-header">Number of Cultures</th>';
+            tenantNames.forEach(tenant => {
+                const truncated = tenant.length > 12 ? tenant.substring(0, 12) + '...' : tenant;
+                headerHTML += `<th class="tenant-header" title="${tenant}" data-full-name="${tenant}">${truncated}</th>`;
+            });
+            headerHTML += '<th class="total-header">TOTAL</th>';
+            headerHTML += '</tr>';
+            
+            thead.innerHTML = headerHTML;
+            
+            // Render body
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            let bodyHTML = '';
+            
+            // Calculate column totals
+            const columnTotals = new Array(tenantNames.length).fill(0);
+            let grandTotal = 0;
+            
+            // Calculate totals first
+            filteredData.forEach(row => {
+                let rowTotal = 0;
+                row.branches.forEach((branchInfo, index) => {
+                    const count = branchInfo.count || 0;
+                    rowTotal += count;
+                    columnTotals[index] += count;
+                });
+                grandTotal += rowTotal;
+            });
+            
+            // Add total row at the top
+            bodyHTML += '<tr class="total-row">';
+            bodyHTML += '<td class="sticky-col">total tenant/culture combination</td>';
+            bodyHTML += '<td class="count-cell"></td>';
+            columnTotals.forEach(total => {
+                bodyHTML += `<td class="tenant-cell">${total}</td>`;
+            });
+            bodyHTML += `<td class="total-cell">${grandTotal}</td>`;
+            bodyHTML += '</tr>';
+            
+            filteredData.forEach(row => {
+                bodyHTML += '<tr>';
+                bodyHTML += `<td class="sticky-col">${row.cultureGroup}</td>`;
+                bodyHTML += `<td class="count-cell">
+                    ${row.numCultures}
+                    <div class="culture-tooltip">${row.cultures.replace(/,/g, ', ')}</div>
+                </td>`;
+                
+                let rowTotal = 0;
+                
+                row.branches.forEach((branchInfo, index) => {
+                    const count = branchInfo.count || 0;
+                    rowTotal += count;
+                    columnTotals[index] += count;
+                    
+                    // Debug logging for BIC_Learn_2_art
+                    if (tenantNames[index] === 'BIC_Learn_2_art' && count > 0) {
+                        console.log(`${row.cultureGroup}: count=${count}, flavor="${branchInfo.flavor}"`);
+                    }
+                    
+                    if (count > 0) {
+                        let className = 'number-cell tenant-cell';
+                        
+                        // Apply color based on Translation Flavor only
+                        if (branchInfo.flavor) {
+                            const flavor = branchInfo.flavor.toUpperCase();
+                            if (flavor === 'MT') {
+                                className += ' flavor-mt';
+                            } else if (flavor === 'AIPE') {
+                                className += ' flavor-aipe';
+                            } else if (flavor === 'MTPE') {
+                                className += ' flavor-mtpe';
+                            } else if (flavor === 'HPE') {
+                                className += ' flavor-hpe';
+                            } else if (flavor === 'HT') {
+                                className += ' flavor-ht';
+                            } else {
+                                className += ' has-value';
+                            }
+                        } else {
+                            className += ' has-value';
+                        }
+                        
+                        bodyHTML += `<td class="${className}">${count}</td>`;
+                    } else {
+                        bodyHTML += '<td class="number-cell tenant-cell"></td>';
+                    }
+                });
+                
+                bodyHTML += `<td class="total-cell">${rowTotal}</td>`;
+                bodyHTML += '</tr>';
+            });
+            
+            tbody.innerHTML = bodyHTML;
+        }
+
+        function updateStats() {
+            document.getElementById('totalCultureGroups').textContent = allData.length;
+            document.getElementById('totalTenants').textContent = tenantNames.length;
+            document.getElementById('totalBranches').textContent = uniqueBranches.size || calculateTotalBranches();
+        }
+        
+        function calculateTotalBranches() {
+            // Fallback if original data not loaded
+            let totalBranches = 0;
+            allData.forEach(row => {
+                row.branches.forEach(branchInfo => totalBranches += (branchInfo.count || 0));
+            });
+            return totalBranches;
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const cultureFilter = document.getElementById('filterCultures').value;
+            
+            filteredData = allData.filter(row => {
+                // Search filter
+                const searchMatch = !searchTerm || 
+                    row.cultureGroup.toLowerCase().includes(searchTerm) ||
+                    row.cultures.toLowerCase().includes(searchTerm);
+                
+                // Culture count filter
+                let cultureMatch = true;
+                if (cultureFilter) {
+                    const num = row.numCultures;
+                    switch(cultureFilter) {
+                        case '1': cultureMatch = num === 1; break;
+                        case '2-5': cultureMatch = num >= 2 && num <= 5; break;
+                        case '6-10': cultureMatch = num >= 6 && num <= 10; break;
+                        case '11-20': cultureMatch = num >= 11 && num <= 20; break;
+                        case '21+': cultureMatch = num >= 21; break;
+                    }
+                }
+                
+                return searchMatch && cultureMatch;
+            });
+            
+            renderTable();
+            updateFilterInfo();
+        }
+
+        function updateFilterInfo() {
+            const filterInfo = document.getElementById('filterInfo');
+            const searchTerm = document.getElementById('searchInput').value;
+            const cultureFilter = document.getElementById('filterCultures').value;
+            
+            if (searchTerm || cultureFilter) {
+                let info = `Showing ${filteredData.length} of ${allData.length} culture groups`;
+                if (searchTerm) info += ` matching "${searchTerm}"`;
+                if (cultureFilter) info += ` with ${cultureFilter} culture${cultureFilter === '1' ? '' : 's'}`;
+                filterInfo.textContent = info;
+                filterInfo.classList.add('active');
+            } else {
+                filterInfo.classList.remove('active');
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterCultures').value = '';
+            applyFilters();
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('filterCultures').addEventListener('change', applyFilters);
+
+        // Load data on page load
+        loadCSV();
+    </script>
+</body>
+</html>
