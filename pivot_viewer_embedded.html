@@ -353,6 +353,18 @@
             position: sticky;
             left: 0;
             z-index: 11;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        th.sticky-col:hover {
+            background: #e9ecef !important;
+        }
+        
+        .sort-indicator {
+            font-size: 0.8em;
+            margin-left: 4px;
+            color: #667eea;
         }
         
         td.sticky-col {
@@ -495,6 +507,100 @@
             height: 14px;
             border-radius: 3px;
         }
+        
+        .flavor-filters {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .flavor-filters h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .flavor-checkbox-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .flavor-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .flavor-checkbox input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+        
+        .flavor-checkbox label {
+            cursor: pointer;
+            font-size: 0.85em;
+            color: #495057;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .flavor-color-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            display: inline-block;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .sort-controls {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .sort-controls h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .sort-button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .sort-button {
+            padding: 8px 16px;
+            background: white;
+            color: #495057;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .sort-button:hover {
+            background: #e9ecef;
+        }
+        
+        .sort-button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -532,6 +638,47 @@
             <button onclick="resetFilters()">Clear Filters</button>
         </div>
         
+        <div class="flavor-filters">
+            <h3>Translation Flavor Filters (Click to show/hide)</h3>
+            <div class="flavor-checkbox-group">
+                <div class="flavor-checkbox">
+                    <input type="checkbox" id="filterMT" checked onchange="applyFilters()">
+                    <label for="filterMT">
+                        <span class="flavor-color-box" style="background: #ff6b6b;"></span>
+                        MT (Machine Translation)
+                    </label>
+                </div>
+                <div class="flavor-checkbox">
+                    <input type="checkbox" id="filterAIPE" checked onchange="applyFilters()">
+                    <label for="filterAIPE">
+                        <span class="flavor-color-box" style="background: #ffd43b;"></span>
+                        AIPE (AI Post-Edit)
+                    </label>
+                </div>
+                <div class="flavor-checkbox">
+                    <input type="checkbox" id="filterMTPE" checked onchange="applyFilters()">
+                    <label for="filterMTPE">
+                        <span class="flavor-color-box" style="background: #d4a574;"></span>
+                        MTPE (MT Post-Edit)
+                    </label>
+                </div>
+                <div class="flavor-checkbox">
+                    <input type="checkbox" id="filterHPE" checked onchange="applyFilters()">
+                    <label for="filterHPE">
+                        <span class="flavor-color-box" style="background: #a3e4a3;"></span>
+                        HPE (Human Post-Edit)
+                    </label>
+                </div>
+                <div class="flavor-checkbox">
+                    <input type="checkbox" id="filterHT" checked onchange="applyFilters()">
+                    <label for="filterHT">
+                        <span class="flavor-color-box" style="background: #2b8a3e;"></span>
+                        HT (Human Translation)
+                    </label>
+                </div>
+            </div>
+        </div>
+        
         <div class="filter-info" id="filterInfo"></div>
         
         <div class="table-container">
@@ -543,30 +690,6 @@
                 No results found. Try adjusting your filters.
             </div>
         </div>
-        
-        <div class="legend">
-            <strong>Color Legend:</strong>
-            <div class="legend-item">
-                <div class="legend-box" style="background: #ff6b6b;"></div>
-                <span>MT (Machine Translation)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background: #ffd43b;"></div>
-                <span>AIPE (AI Post-Edit)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background: #d4a574;"></div>
-                <span>MTPE (MT Post-Edit)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background: #a3e4a3;"></div>
-                <span>HPE (Human Post-Edit)</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-box" style="background: #2b8a3e;"></div>
-                <span>HT (Human Translation)</span>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -574,6 +697,7 @@
         let filteredData = [];
         let tenantNames = [];
         let uniqueBranches = new Set();
+        let currentSort = 'cultures-asc'; // Default sort
 
         // Load and parse CSV
         async function loadCSV() {
@@ -776,7 +900,12 @@
             headerHTML += '</tr>';
             
             headerHTML += '<tr>';
-            headerHTML += '<th class="sticky-col" style="font-size: 0.7em;">Culture Group ↓</th>';
+            
+            // Make Culture Group header clickable for sorting
+            const sortIndicator = currentSort === 'cultures-asc' ? '📊' : '🔤';
+            const sortTitle = currentSort === 'cultures-asc' ? 'Click to sort by Name (A-Z)' : 'Click to sort by Number of Cultures (Low-High)';
+            headerHTML += `<th class="sticky-col" style="font-size: 0.7em;" onclick="toggleSort()" title="${sortTitle}">Culture Group <span class="sort-indicator">${sortIndicator}</span></th>`;
+            
             headerHTML += '<th class="count-header">Number of Cultures</th>';
             tenantNames.forEach(tenant => {
                 const truncated = tenant.length > 12 ? tenant.substring(0, 12) + '...' : tenant;
@@ -834,20 +963,35 @@
                 
                 row.branches.forEach((branchInfo, index) => {
                     const count = branchInfo.count || 0;
-                    rowTotal += count;
-                    columnTotals[index] += count;
+                    const flavor = branchInfo.flavor ? branchInfo.flavor.toUpperCase() : '';
+                    
+                    // Check if this flavor is filtered out
+                    const flavorFilters = {
+                        'MT': document.getElementById('filterMT')?.checked,
+                        'AIPE': document.getElementById('filterAIPE')?.checked,
+                        'MTPE': document.getElementById('filterMTPE')?.checked,
+                        'HPE': document.getElementById('filterHPE')?.checked,
+                        'HT': document.getElementById('filterHT')?.checked
+                    };
+                    
+                    const isFlavorVisible = !flavor || flavorFilters[flavor] !== false;
+                    
+                    // Only count and display if flavor is visible
+                    if (isFlavorVisible && count > 0) {
+                        rowTotal += count;
+                        columnTotals[index] += count;
+                    }
                     
                     // Debug logging for BIC_Learn_2_art
                     if (tenantNames[index] === 'BIC_Learn_2_art' && count > 0) {
-                        console.log(`${row.cultureGroup}: count=${count}, flavor="${branchInfo.flavor}"`);
+                        console.log(`${row.cultureGroup}: count=${count}, flavor="${flavor}"`);
                     }
                     
-                    if (count > 0) {
+                    if (count > 0 && isFlavorVisible) {
                         let className = 'number-cell tenant-cell';
                         
                         // Apply color based on Translation Flavor only
-                        if (branchInfo.flavor) {
-                            const flavor = branchInfo.flavor.toUpperCase();
+                        if (flavor) {
                             if (flavor === 'MT') {
                                 className += ' flavor-mt';
                             } else if (flavor === 'AIPE') {
@@ -919,7 +1063,8 @@
                 return searchMatch && cultureMatch;
             });
             
-            renderTable();
+            // Reapply current sort
+            sortBy(currentSort);
             updateFilterInfo();
         }
 
@@ -939,9 +1084,32 @@
             }
         }
 
+        function sortBy(sortType) {
+            currentSort = sortType;
+            
+            if (sortType === 'cultures-asc') {
+                filteredData.sort((a, b) => a.numCultures - b.numCultures);
+            } else if (sortType === 'name-asc') {
+                filteredData.sort((a, b) => a.cultureGroup.localeCompare(b.cultureGroup));
+            }
+            
+            renderTable();
+        }
+        
+        function toggleSort() {
+            // Toggle between cultures-asc and name-asc
+            const newSort = currentSort === 'cultures-asc' ? 'name-asc' : 'cultures-asc';
+            sortBy(newSort);
+        }
+
         function resetFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('filterCultures').value = '';
+            document.getElementById('filterMT').checked = true;
+            document.getElementById('filterAIPE').checked = true;
+            document.getElementById('filterMTPE').checked = true;
+            document.getElementById('filterHPE').checked = true;
+            document.getElementById('filterHT').checked = true;
             applyFilters();
         }
 
