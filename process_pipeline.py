@@ -249,17 +249,20 @@ with open('data_pivot.csv', 'r', encoding='utf-8') as f:
 with open('pivot_viewer.html', 'r', encoding='utf-8') as f:
     html_content = f.read()
 
-# Create embedded JavaScript
-embedded_js = f'''
-        function loadDefaultData() {{
-            const csvData = `{csv_data}`;
-            parseCSV(csvData);
-        }}
-'''
+# Create embedded JavaScript that replaces the async loadCSV function
+# We'll replace it with a synchronous version that uses embedded data
+embedded_load_function = f'''
+        // Load and parse CSV (embedded data version)
+        async function loadCSV() {{
+            const text = `{csv_data}`;
+            parseCSV(text);
+            // Note: Original data loading skipped for embedded version
+            return;
+        }}'''
 
-# Replace the loadDefaultData function
-pattern = r'function loadDefaultData\(\) \{[^}]*fetch\([^}]*\}[^}]*\}[^}]*\}'
-html_content = re.sub(pattern, embedded_js.strip(), html_content, flags=re.DOTALL)
+# Replace the loadCSV function
+pattern = r'// Load and parse CSV\s+async function loadCSV\(\) \{[^}]*\{[^}]*\}[^}]*\}[^}]*\}'
+html_content = re.sub(pattern, embedded_load_function.strip(), html_content, flags=re.DOTALL)
 
 # Write the self-contained HTML
 with open('pivot_viewer_embedded.html', 'w', encoding='utf-8') as f:

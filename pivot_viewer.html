@@ -703,7 +703,7 @@
         async function loadCSV() {
             // First try to fetch from URL
             try {
-                const response = await fetch('tenant_culture_group_pivot.csv');
+                const response = await fetch('data_pivot.csv');
                 if (response.ok) {
                     const text = await response.text();
                     parseCSV(text);
@@ -767,7 +767,7 @@
             container.innerHTML = `
                 <div style="text-align: center; padding: 60px 30px;">
                     <h2 style="color: #495057; margin-bottom: 20px;">📂 Load CSV File</h2>
-                    <p style="color: #6c757d; margin-bottom: 30px;">Please select the tenant_culture_group_pivot.csv file</p>
+                    <p style="color: #6c757d; margin-bottom: 30px;">Please select the data_pivot.csv file</p>
                     <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
                     <button onclick="document.getElementById('csvFileInput').click()" 
                             style="padding: 15px 30px; background: #667eea; color: white; border: none; 
