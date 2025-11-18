@@ -72,17 +72,24 @@ with open('data_sorted_cultures.csv', 'r', encoding='utf-8-sig') as f:
         qe_enabled = row.get('QE/AIPE Enabled', '').strip().upper()
         hpe_enabled = row.get('HPE Enabled', '').strip().upper()
         current_flavor = row.get('TranslationFlavor', '').strip()
+        provider_type = row.get('Translation Provider Type', '').strip()
+        provider_type = row.get('Translation Provider Type', '').strip()
         
         # Rule: Preserve original TranslationFlavor if not blank
         if current_flavor:
+            # Keep existing flavor, don't overwrite
             flavor_rows.append(row)
             continue
         
         # Apply Translation Flavor logic only when TranslationFlavor is blank
+        # Rule: Translation Provider Type = CtsDownstreamConnectorSagaTemplate + QE=FALSE → MT
+        if provider_type == 'CtsDownstreamConnectorSagaTemplate' and qe_enabled == 'FALSE':
+            row['TranslationFlavor'] = 'MT'
         # Rule #2: QE=TRUE + HPE=blank → AIPE
-        if qe_enabled == 'TRUE' and hpe_enabled == '':
+        elif qe_enabled == 'TRUE' and hpe_enabled == '':
             row['TranslationFlavor'] = 'AIPE'
             qe_true_hpe_blank_count += 1
+            warnings.append(f"Row {row_num}: QE=TRUE, HPE=blank → Set to AIPE (Tenant: {row.get('Tenant', '')[:30]}, Branch: {row.get('Branch', '')[:30]})")
         # QE=TRUE + HPE=TRUE → HPE
         elif qe_enabled == 'TRUE' and hpe_enabled == 'TRUE':
             row['TranslationFlavor'] = 'HPE'
@@ -97,8 +104,9 @@ with open('data_sorted_cultures.csv', 'r', encoding='utf-8-sig') as f:
             row['TranslationFlavor'] = 'MT'
         # Rule #1: Both QE and HPE blank → Keep existing (should have pre-existing flavor)
         elif qe_enabled == '' and hpe_enabled == '':
+            # TranslationFlavor should have a pre-existing value, but it's blank
             row['TranslationFlavor'] = ''
-            warnings.append(f"Row {row_num}: Both QE/AIPE and HPE are blank, but TranslationFlavor is also blank (Tenant: {row.get('Tenant', '')[:30]}, Branch: {row.get('Branch', '')[:30]})")
+            warnings.append(f"⚠️  Row {row_num}: Both QE/AIPE and HPE are blank, but TranslationFlavor is also blank (Tenant: {row.get('Tenant', '')[:30]}, Branch: {row.get('Branch', '')[:30]})")
         else:
             # Other cases (e.g., QE=FALSE and HPE=blank) - keep blank
             row['TranslationFlavor'] = ''
@@ -140,6 +148,7 @@ branch_metadata = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 culture_group_cultures = {}
 all_culture_groups = set()
 all_tenants = set()
+all_branches = set()  # Track all unique branches
 
 with open('data_sorted_cultures.csv', 'r', encoding='utf-8-sig') as f:
     reader = csv.DictReader(f)
@@ -157,6 +166,7 @@ with open('data_sorted_cultures.csv', 'r', encoding='utf-8-sig') as f:
             branch_counts[tenant][culture_group].add(branch)
             all_culture_groups.add(culture_group)
             all_tenants.add(tenant)
+            all_branches.add(branch)  # Track unique branch
             
             # Store metadata for this combination
             branch_metadata[tenant][culture_group][branch] = {
@@ -182,6 +192,10 @@ sorted_culture_groups = sorted(all_culture_groups, key=get_culture_count)
 # Write pivot table to CSV
 with open('data_pivot.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
+    
+    # Metadata row (will be parsed by JavaScript)
+    metadata = ['# METADATA', f'TOTAL_BRANCHES={len(all_branches)}', '', ''] + [''] * len(sorted_tenants)
+    writer.writerow(metadata)
     
     # Header row
     header = ['Culture Group', 'Number of Cultures', 'Cultures'] + sorted_tenants
@@ -275,15 +289,18 @@ print(f"   Output: pivot_viewer_embedded.html")
 # ============================================================================
 # CLEANUP TEMPORARY FILES
 # ============================================================================
-print("\n[CLEANUP] Removing temporary files...")
+print("\n[CLEANUP] Saving final processed data and removing temporary files...")
 print("-"*80)
 
 import os
-temp_files = ['data_sorted_cultures.csv']
-for temp_file in temp_files:
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
-        print(f"✅ Deleted: {temp_file}")
+
+# Save the processed data with a final name before cleanup
+if os.path.exists('data_sorted_cultures.csv'):
+    import shutil
+    shutil.copy('data_sorted_cultures.csv', 'data_processed.csv')
+    print(f"✅ Saved: data_processed.csv (source data with Translation Flavor applied)")
+    os.remove('data_sorted_cultures.csv')
+    print(f"✅ Deleted temporary: data_sorted_cultures.csv")
 
 # ============================================================================
 # SUMMARY
@@ -292,6 +309,7 @@ print("\n" + "="*80)
 print("✅ PIPELINE COMPLETED SUCCESSFULLY!")
 print("="*80)
 print("\nGenerated files:")
+print("  📄 data_processed.csv - Source data with Translation Flavor logic applied")
 print("  📊 data_pivot.csv - Pivot table data")
 print("  🌐 pivot_viewer_embedded.html - Self-contained interactive viewer")
 print("\nNext steps:")

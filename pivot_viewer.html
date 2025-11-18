@@ -708,8 +708,7 @@
                     const text = await response.text();
                     parseCSV(text);
                     
-                    // Also load the original data to count unique branches
-                    await loadOriginalData();
+                    // Note: Branch counting removed since data_sorted_cultures.csv is a temporary file
                     return;
                 }
             } catch (error) {
@@ -803,13 +802,27 @@
 
         function parseCSV(text) {
             const lines = text.trim().split('\n');
-            const headers = parseCSVLine(lines[0]);
+            let startLine = 0;
+            
+            // Check for metadata row
+            if (lines[0].startsWith('# METADATA')) {
+                const metadataLine = parseCSVLine(lines[0]);
+                // Parse TOTAL_BRANCHES=XXX
+                const branchesMetadata = metadataLine.find(item => item.startsWith('TOTAL_BRANCHES='));
+                if (branchesMetadata) {
+                    const totalBranches = parseInt(branchesMetadata.split('=')[1]);
+                    document.getElementById('totalBranches').textContent = totalBranches;
+                }
+                startLine = 1; // Skip metadata row
+            }
+            
+            const headers = parseCSVLine(lines[startLine]);
             
             // Extract tenant names (skip first 3 columns: Culture Group, Number of Cultures, Cultures)
             const rawTenantNames = headers.slice(3);
             
             allData = [];
-            for (let i = 1; i < lines.length; i++) {
+            for (let i = startLine + 1; i < lines.length; i++) {
                 const values = parseCSVLine(lines[i]);
                 if (values.length > 0) {
                     const branchData = values.slice(3).map(v => {
@@ -1025,16 +1038,7 @@
         function updateStats() {
             document.getElementById('totalCultureGroups').textContent = allData.length;
             document.getElementById('totalTenants').textContent = tenantNames.length;
-            document.getElementById('totalBranches').textContent = uniqueBranches.size || calculateTotalBranches();
-        }
-        
-        function calculateTotalBranches() {
-            // Fallback if original data not loaded
-            let totalBranches = 0;
-            allData.forEach(row => {
-                row.branches.forEach(branchInfo => totalBranches += (branchInfo.count || 0));
-            });
-            return totalBranches;
+            // totalBranches is set during CSV parsing from metadata
         }
 
         function applyFilters() {

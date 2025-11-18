@@ -32,6 +32,7 @@ The `process_pipeline.py` script processes `data.csv` through 4 automated steps:
 ### Translation Flavor Logic
 
 - **Preserve existing values** - Pre-existing flavors (HT, MTPE) are never overwritten
+- **Translation Provider Type = CtsDownstreamConnectorSagaTemplate + QE=FALSE** → MT
 - **QE=TRUE + HPE=TRUE** → HPE
 - **QE=TRUE + HPE=FALSE** → AIPE
 - **QE=TRUE + HPE=blank** → AIPE
@@ -59,8 +60,8 @@ The `process_pipeline.py` script processes `data.csv` through 4 automated steps:
 - `start_viewer.py` - Local development server
 
 **Generated:**
-- `data_sorted_cultures.csv` - Processed source data
-- `tenant_culture_group_pivot.csv` - Pivot table data
+- `data_processed.csv` - Processed source data with Translation Flavor logic applied
+- `data_pivot.csv` - Pivot table data
 - `pivot_viewer_embedded.html` - Self-contained interactive viewer
 - `pivot_viewer.html` - Viewer template (requires server)
 
