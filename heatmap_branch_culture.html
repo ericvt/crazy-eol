@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branch-Culture Quality Matrix</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1em;
+            margin: 0;
+        }
+
+        .header p {
+            display: none;
+        }
+
+        .stats {
+            display: flex;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 4px 12px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .stat-card .number {
+            font-size: 1em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #6c757d;
+            margin-top: 2px;
+            font-size: 0.7em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 6px 12px;
+            background: #fff;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input, .controls select {
+            padding: 4px 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .controls input {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .controls label {
+            font-size: 11px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .controls input:focus, .controls select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .legend {
+            padding: 6px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #495057;
+            font-size: 11px;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+
+        .matrix-container {
+            overflow: auto;
+            max-height: calc(100vh - 200px);
+            position: relative;
+        }
+
+        .quality-matrix {
+            border-collapse: collapse;
+            font-size: 9px;
+            width: auto;
+        }
+
+        .quality-matrix th {
+            background: #f8f9fa;
+            padding: 4px;
+            border: 1px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .quality-matrix th.branch-header {
+            left: 0;
+            z-index: 11;
+            text-align: left;
+            min-width: 200px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: #fff;
+            border-right: 2px solid #adb5bd;
+        }
+
+        .quality-matrix th.combination-header {
+            left: 200px;
+            z-index: 11;
+            background: #fff;
+            border-right: 2px solid #adb5bd;
+            padding: 4px 2px;
+        }
+
+        .quality-matrix th.culture-header {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            min-width: 28px;
+            max-width: 28px;
+            height: 100px;
+            white-space: nowrap;
+            font-size: 9px;
+        }
+
+        .quality-matrix td {
+            border: 1px solid #dee2e6;
+            padding: 0;
+            min-width: 28px;
+            max-width: 28px;
+            height: 28px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quality-matrix td.branch-cell {
+            position: sticky;
+            left: 0;
+            background: #fff;
+            font-weight: 500;
+            padding: 4px 6px;
+            text-align: left;
+            min-width: 200px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 5;
+            border-right: 2px solid #adb5bd;
+        }
+
+        .quality-matrix td.combo-cell {
+            position: sticky;
+            left: 200px;
+            background: #f8f9fa;
+            z-index: 5;
+            border-right: 2px solid #adb5bd;
+        }
+
+        .quality-matrix td:hover:not(.branch-cell):not(.combo-cell) {
+            transform: scale(1.3);
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 2px solid #333;
+        }
+
+        .quality-matrix tr:hover {
+            background: #f8f9fa;
+        }
+
+        .cell-empty {
+            background: #fafafa;
+        }
+
+        .cell-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .cell-multi {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cell-segment {
+            flex: 1;
+        }
+
+        /* Color scheme for TranslationFlavor */
+        .flavor-MT { background-color: #DC3545; }
+        .flavor-AIPE { background-color: #FF9800; }
+        .flavor-MTPE { background-color: #8BC34A; }
+        .flavor-HPE { background-color: #4CAF50; }
+        .flavor-HT { background-color: #2E7D32; }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .tooltip-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .tooltip-row {
+            margin: 4px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Content EOL Branch & Culture</h1>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="branchCount">-</div>
+                <div class="label">Branches</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="cultureCount">-</div>
+                <div class="label">Cultures</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalCombinations">-</div>
+                <div class="label">Active Combinations</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalRecords">-</div>
+                <div class="label">Total Records</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="searchBranch">Search Branch:</label>
+                <input type="text" id="searchBranch" placeholder="Filter branches...">
+            </div>
+            <div class="filter-group">
+                <label for="searchCulture">Search Culture:</label>
+                <input type="text" id="searchCulture" placeholder="Filter cultures...">
+            </div>
+            <div class="filter-group">
+                <label for="flavorFilter">Translation Flavor:</label>
+                <select id="flavorFilter">
+                    <option value="">All</option>
+                    <option value="MT">MT</option>
+                    <option value="AIPE">AIPE</option>
+                    <option value="HPE">HPE</option>
+                    <option value="MTPE">MTPE</option>
+                    <option value="HT">HT</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-title">Translation Flavor Legend:</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color flavor-MT"></div>
+                    <span>MT - Machine Translation (Red)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-AIPE"></div>
+                    <span>AIPE - AI-Powered Enhancement (Orange)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-MTPE"></div>
+                    <span>MTPE - Machine Translation Post-Editing (Light Green)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-HPE"></div>
+                    <span>HPE - High Performance Enhancement (Green)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-HT"></div>
+                    <span>HT - Human Translation (Dark Green)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="matrix-container">
+            <div id="matrixContent" class="loading">Loading data...</div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Configuration
+        const CSV_FILE = 'data_processed.csv';
+
+        // Global data storage
+        let rawData = [];
+        let matrixData = {};
+        let branches = [];
+        let cultures = [];
+        let branchCombinationCounts = {};
+
+        // Parse CSV
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, ''));
+
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index].trim();
+                    });
+                    data.push(row);
+                }
+            }
+            return data;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        // Aggregate data into Branch x Culture matrix
+        function aggregateMatrixData(data) {
+            const matrix = {};
+            const branchSet = new Set();
+            const cultureSet = new Set();
+            const cultureCounts = {}; // Track how many branches each culture appears in
+            const branchCombinations = {}; // Track unique CultureGroup+Flavor combinations per branch
+
+            data.forEach(row => {
+                const branch = row.Branch || 'Unknown';
+                const flavor = row.TranslationFlavor || 'Unknown';
+                const culturesStr = row.Cultures || '';
+                const tenant = row.Tenant || 'Unknown';
+                const cultureGroup = row['Culture Group'] || 'Unknown';
+
+                // Split cultures by comma
+                const culturelist = culturesStr.split(',').map(c => c.trim()).filter(c => c);
+
+                branchSet.add(branch);
+
+                // Initialize branch in matrix
+                if (!matrix[branch]) {
+                    matrix[branch] = {};
+                }
+
+                // Track unique CultureGroup+Flavor combinations for this branch
+                if (!branchCombinations[branch]) {
+                    branchCombinations[branch] = new Set();
+                }
+                branchCombinations[branch].add(`${cultureGroup}|${flavor}`);
+
+                // Add each culture
+                culturelist.forEach(culture => {
+                    cultureSet.add(culture);
+
+                    if (!matrix[branch][culture]) {
+                        matrix[branch][culture] = {
+                            flavors: {},
+                            records: [],
+                            tenant: tenant,
+                            cultureGroup: cultureGroup
+                        };
+                        // Count this culture for this branch
+                        cultureCounts[culture] = (cultureCounts[culture] || 0) + 1;
+                    }
+
+                    // Track flavor
+                    matrix[branch][culture].flavors[flavor] =
+                        (matrix[branch][culture].flavors[flavor] || 0) + 1;
+                    matrix[branch][culture].records.push(row);
+                });
+            });
+
+            // Sort cultures by count (most represented first)
+            const sortedCultures = Array.from(cultureSet).sort((a, b) => {
+                const countDiff = (cultureCounts[b] || 0) - (cultureCounts[a] || 0);
+                if (countDiff !== 0) return countDiff;
+                return a.localeCompare(b); // Alphabetical as tiebreaker
+            });
+
+            // Sort branches by number of cultures (most to least)
+            const sortedBranches = Array.from(branchSet).sort((a, b) => {
+                const cultureCountA = Object.keys(matrix[a] || {}).length;
+                const cultureCountB = Object.keys(matrix[b] || {}).length;
+                const countDiff = cultureCountB - cultureCountA;
+                if (countDiff !== 0) return countDiff;
+                return a.localeCompare(b); // Alphabetical as tiebreaker
+            });
+
+            // Convert combination counts from Set to number
+            const branchCombinationCounts = {};
+            Object.keys(branchCombinations).forEach(branch => {
+                branchCombinationCounts[branch] = branchCombinations[branch].size;
+            });
+
+            return {
+                matrix,
+                branches: sortedBranches,
+                cultures: sortedCultures,
+                branchCombinationCounts
+            };
+        }
+
+        // Create matrix HTML
+        function createMatrix(filteredBranches, filteredCultures, flavorFilter) {
+            let html = '<table class="quality-matrix"><thead><tr>';
+            html += '<th class="branch-header">Branch</th>';
+            html += '<th class="combination-header" style="min-width: 70px; max-width: 70px; writing-mode: inherit; transform: none; height: auto; text-align: center; font-size: 9px;" title="Number of unique Culture Group + Flavor combinations">Culture Groups</th>';
+
+            filteredCultures.forEach(culture => {
+                html += `<th class="culture-header" title="${culture}">${culture}</th>`;
+            });
+
+            html += '</tr></thead><tbody>';
+
+            filteredBranches.forEach(branch => {
+                html += '<tr>';
+                html += `<td class="branch-cell" title="${branch}">${branch}</td>`;
+                html += `<td class="combo-cell" style="text-align: center; padding: 4px; font-weight: 600; color: #667eea; min-width: 70px; max-width: 70px; font-size: 10px;">${branchCombinationCounts[branch] || 0}</td>`;
+
+                filteredCultures.forEach(culture => {
+                    const cellData = matrixData[branch]?.[culture];
+
+                    if (!cellData) {
+                        html += '<td class="cell-empty"></td>';
+                    } else {
+                        // Apply flavor filter
+                        let flavors = cellData.flavors;
+                        if (flavorFilter) {
+                            flavors = { [flavorFilter]: cellData.flavors[flavorFilter] || 0 };
+                        }
+
+                        const totalFlavors = Object.values(flavors).reduce((a, b) => a + b, 0);
+                        if (totalFlavors === 0) {
+                            html += '<td class="cell-empty"></td>';
+                            return;
+                        }
+
+                        const cellInfo = JSON.stringify({
+                            branch,
+                            culture,
+                            flavors: cellData.flavors,
+                            tenant: cellData.tenant,
+                            cultureGroup: cellData.cultureGroup,
+                            recordCount: cellData.records.length
+                        }).replace(/"/g, '&quot;');
+
+                        // If only one flavor, use solid color
+                        const flavorKeys = Object.keys(flavors).filter(f => flavors[f] > 0);
+                        if (flavorKeys.length === 1) {
+                            const flavor = flavorKeys[0];
+                            html += `<td class="flavor-${flavor}" data-cell='${cellInfo}'>`;
+                            html += '<div class="cell-content"></div>';
+                            html += '</td>';
+                        } else {
+                            // Multiple flavors - show segments
+                            html += `<td data-cell='${cellInfo}'>`;
+                            html += '<div class="cell-multi">';
+                            Object.entries(flavors).forEach(([flavor, count]) => {
+                                if (count > 0) {
+                                    html += `<div class="cell-segment flavor-${flavor}" style="flex: ${count}"></div>`;
+                                }
+                            });
+                            html += '</div></td>';
+                        }
+                    }
+                });
+
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Show tooltip
+        function showTooltip(event, cellData) {
+            const tooltip = document.getElementById('tooltip');
+            const data = JSON.parse(cellData);
+
+            let html = `<div class="tooltip-header">${data.branch} / ${data.culture}</div>`;
+            html += `<div class="tooltip-row"><strong>Tenant:</strong> ${data.tenant}</div>`;
+            html += `<div class="tooltip-row"><strong>Culture Group:</strong> ${data.cultureGroup}</div>`;
+            html += `<div class="tooltip-row"><strong>Records:</strong> ${data.recordCount}</div>`;
+            html += '<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">';
+            html += '<div><strong>Translation Flavors:</strong></div>';
+
+            Object.entries(data.flavors).forEach(([flavor, count]) => {
+                html += `<div class="tooltip-row">• ${flavor}: ${count}</div>`;
+            });
+
+            html += '</div>';
+            tooltip.innerHTML = html;
+            tooltip.style.display = 'block';
+
+            // Position tooltip
+            const x = event.clientX + 15;
+            const y = event.clientY + 15;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        // Apply filters and re-render
+        function applyFilters() {
+            const branchSearch = document.getElementById('searchBranch').value.toLowerCase();
+            const cultureSearch = document.getElementById('searchCulture').value.toLowerCase();
+            const flavorFilter = document.getElementById('flavorFilter').value;
+
+            const filteredBranches = branches.filter(b => b.toLowerCase().includes(branchSearch));
+            const filteredCultures = cultures.filter(c => c.toLowerCase().includes(cultureSearch));
+
+            const matrixHTML = createMatrix(filteredBranches, filteredCultures, flavorFilter);
+            document.getElementById('matrixContent').innerHTML = matrixHTML;
+
+            // Attach event listeners
+            document.querySelectorAll('td[data-cell]').forEach(cell => {
+                cell.addEventListener('mouseenter', (e) => showTooltip(e, cell.dataset.cell));
+                cell.addEventListener('mouseleave', hideTooltip);
+                cell.addEventListener('mousemove', (e) => {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.style.left = (e.clientX + 15) + 'px';
+                    tooltip.style.top = (e.clientY + 15) + 'px';
+                });
+            });
+        }
+
+        // Process loaded data
+        function processData(text) {
+            rawData = parseCSV(text);
+
+            console.log('Parsed rows:', rawData.length);
+            console.log('First row sample:', rawData[0]);
+
+            const aggregated = aggregateMatrixData(rawData);
+            matrixData = aggregated.matrix;
+            branches = aggregated.branches;
+            cultures = aggregated.cultures;
+            branchCombinationCounts = aggregated.branchCombinationCounts;
+
+            console.log('Branches:', branches.length);
+            console.log('Cultures:', cultures.length);
+
+            // Count active combinations
+            let activeCombinations = 0;
+            Object.values(matrixData).forEach(branch => {
+                activeCombinations += Object.keys(branch).length;
+            });
+
+            // Update stats
+            document.getElementById('branchCount').textContent = branches.length;
+            document.getElementById('cultureCount').textContent = cultures.length;
+            document.getElementById('totalCombinations').textContent = activeCombinations;
+            document.getElementById('totalRecords').textContent = rawData.length;
+
+            // Render matrix
+            applyFilters();
+        }
+
+        // Try to auto-load CSV file
+        async function autoLoadData() {
+            try {
+                const response = await fetch(CSV_FILE);
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${CSV_FILE}: ${response.status} ${response.statusText}`);
+                }
+
+                const text = await response.text();
+                processData(text);
+                console.log(`✓ Successfully loaded ${CSV_FILE}`);
+
+            } catch (error) {
+                document.getElementById('matrixContent').innerHTML =
+                    `<div class="error" style="padding: 40px;">
+                        <h3>Failed to load data</h3>
+                        <p>Could not load ${CSV_FILE}</p>
+                        <p style="margin-top: 20px; font-size: 14px;">Make sure you're running a local web server:</p>
+                        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; text-align: left; display: inline-block;">./start_server.sh</pre>
+                        <p style="margin-top: 10px; font-size: 14px;">Then open: http://localhost:8000/heatmap_branch_culture.html</p>
+                    </div>`;
+                console.error('Failed to load data:', error);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('searchBranch').addEventListener('input', applyFilters);
+        document.getElementById('searchCulture').addEventListener('input', applyFilters);
+        document.getElementById('flavorFilter').addEventListener('change', applyFilters);
+
+        // Try to auto-load data on page load
+        autoLoadData();
+    </script>
+</body>
+</html>

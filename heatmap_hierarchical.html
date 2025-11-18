@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant-Branch Hierarchical View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .file-upload {
+            padding: 15px 20px;
+            background: #e7f3ff;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .file-upload label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .file-upload input[type="file"] {
+            padding: 8px 12px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .file-upload .file-info {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-card .number {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .label {
+            color: #6c757d;
+            margin-top: 5px;
+            font-size: 0.85em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #fff;
+            border-bottom: 2px solid #dee2e6;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .controls input, .controls select, .controls button {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .controls input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .controls button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .controls button:hover {
+            background: #5568d3;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .legend {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .table-container {
+            overflow: auto;
+            max-height: calc(100vh - 450px);
+        }
+
+        .hierarchical-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .hierarchical-table thead th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .hierarchical-table tbody tr {
+            border-bottom: 1px solid #dee2e6;
+            transition: background 0.2s;
+        }
+
+        .hierarchical-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .tenant-row {
+            cursor: pointer;
+            background: white;
+        }
+
+        .tenant-row:hover {
+            background: #e7f3ff !important;
+        }
+
+        .tenant-row.expanded {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+        }
+
+        .tenant-row td {
+            padding: 12px;
+            font-weight: 500;
+        }
+
+        .branch-row {
+            background: #fafbfc;
+            display: none;
+        }
+
+        .branch-row.visible {
+            display: table-row;
+        }
+
+        .branch-row td {
+            padding: 10px 12px 10px 40px;
+            font-size: 13px;
+        }
+
+        .expand-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            text-align: center;
+            line-height: 20px;
+            border-radius: 4px;
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            vertical-align: middle;
+        }
+
+        .flavor-bar-container {
+            display: flex;
+            gap: 4px;
+            height: 24px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #e9ecef;
+            min-width: 200px;
+            max-width: 400px;
+        }
+
+        .flavor-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            min-width: 20px;
+        }
+
+        /* Color scheme for TranslationFlavor */
+        .flavor-MT { background-color: #DC3545; }
+        .flavor-AIPE { background-color: #FF9800; }
+        .flavor-MTPE { background-color: #8BC34A; }
+        .flavor-HPE { background-color: #4CAF50; }
+        .flavor-HT { background-color: #2E7D32; }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #e7f3ff;
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #dc3545;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tenant-Branch Hierarchical View</h1>
+            <p>Click on tenants to expand and view branches</p>
+        </div>
+
+        <div class="file-upload">
+            <label for="csvFile">Load CSV File:</label>
+            <input type="file" id="csvFile" accept=".csv" />
+            <span class="file-info" id="fileInfo"></span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="tenantCount">-</div>
+                <div class="label">Tenants</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="branchCount">-</div>
+                <div class="label">Branches</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="cultureGroupCount">-</div>
+                <div class="label">Culture Groups</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalRecords">-</div>
+                <div class="label">Total Records</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="searchTenant">Search Tenant:</label>
+                <input type="text" id="searchTenant" placeholder="Filter tenants...">
+            </div>
+            <div class="filter-group">
+                <label for="searchBranch">Search Branch:</label>
+                <input type="text" id="searchBranch" placeholder="Filter branches...">
+            </div>
+            <div class="filter-group">
+                <label for="flavorFilter">Translation Flavor:</label>
+                <select id="flavorFilter">
+                    <option value="">All</option>
+                    <option value="MT">MT</option>
+                    <option value="AIPE">AIPE</option>
+                    <option value="HPE">HPE</option>
+                    <option value="MTPE">MTPE</option>
+                    <option value="HT">HT</option>
+                </select>
+            </div>
+            <button id="expandAll">Expand All</button>
+            <button id="collapseAll">Collapse All</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-title">Translation Flavor Legend:</div>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color flavor-MT"></div>
+                    <span>MT - Machine Translation (Red)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-AIPE"></div>
+                    <span>AIPE - AI-Powered Enhancement (Orange)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-MTPE"></div>
+                    <span>MTPE - Machine Translation Post-Editing (Light Green)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-HPE"></div>
+                    <span>HPE - High Performance Enhancement (Green)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color flavor-HT"></div>
+                    <span>HT - Human Translation (Dark Green)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div id="tableContent" class="loading">Loading data...</div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Configuration
+        const CSV_FILE = 'data_processed.csv';
+
+        // Global data storage
+        let rawData = [];
+        let hierarchicalData = {};
+        let expandedTenants = new Set();
+
+        // Parse CSV
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, ''));
+
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length === headers.length) {
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index].trim();
+                    });
+                    data.push(row);
+                }
+            }
+            return data;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        // Aggregate data into hierarchical structure
+        function aggregateHierarchicalData(data) {
+            const hierarchy = {};
+            const cultureGroupSet = new Set();
+            let totalBranches = 0;
+
+            data.forEach(row => {
+                const tenant = row.Tenant || 'Unknown';
+                const branch = row.Branch || 'Unknown';
+                const flavor = row.TranslationFlavor || 'Unknown';
+                const cultureGroup = row['Culture Group'] || 'Unknown';
+
+                cultureGroupSet.add(cultureGroup);
+
+                // Initialize tenant
+                if (!hierarchy[tenant]) {
+                    hierarchy[tenant] = {
+                        name: tenant,
+                        branches: {},
+                        totalRecords: 0,
+                        totalFlavors: {},
+                        branchCount: 0
+                    };
+                }
+
+                // Initialize branch
+                if (!hierarchy[tenant].branches[branch]) {
+                    hierarchy[tenant].branches[branch] = {
+                        name: branch,
+                        count: 0,
+                        flavors: {},
+                        cultureGroups: new Set(),
+                        records: []
+                    };
+                    hierarchy[tenant].branchCount++;
+                    totalBranches++;
+                }
+
+                // Update counts
+                hierarchy[tenant].branches[branch].count++;
+                hierarchy[tenant].branches[branch].flavors[flavor] =
+                    (hierarchy[tenant].branches[branch].flavors[flavor] || 0) + 1;
+                hierarchy[tenant].branches[branch].cultureGroups.add(cultureGroup);
+                hierarchy[tenant].branches[branch].records.push(row);
+
+                // Update tenant totals
+                hierarchy[tenant].totalRecords++;
+                hierarchy[tenant].totalFlavors[flavor] =
+                    (hierarchy[tenant].totalFlavors[flavor] || 0) + 1;
+            });
+
+            return {
+                hierarchy,
+                totalBranches,
+                cultureGroups: Array.from(cultureGroupSet).sort()
+            };
+        }
+
+        // Create flavor bar visualization
+        function createFlavorBar(flavors) {
+            const total = Object.values(flavors).reduce((a, b) => a + b, 0);
+            if (total === 0) return '<div class="flavor-bar-container"></div>';
+
+            let html = '<div class="flavor-bar-container">';
+            Object.entries(flavors).sort((a, b) => b[1] - a[1]).forEach(([flavor, count]) => {
+                if (count > 0) {
+                    const percentage = ((count / total) * 100).toFixed(0);
+                    const width = (count / total) * 100;
+                    html += `<div class="flavor-segment flavor-${flavor}"
+                                  style="flex: ${count}"
+                                  title="${flavor}: ${count} (${percentage}%)">
+                                ${percentage > 5 ? count : ''}
+                             </div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // Create hierarchical table
+        function createHierarchicalTable(searchTenant = '', searchBranch = '', flavorFilter = '') {
+            const tenants = Object.keys(hierarchicalData).sort();
+            const filteredTenants = tenants.filter(t => t.toLowerCase().includes(searchTenant.toLowerCase()));
+
+            let html = `
+                <table class="hierarchical-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Name</th>
+                            <th style="width: 10%;">Branches</th>
+                            <th style="width: 10%;">Records</th>
+                            <th style="width: 10%;">Culture Groups</th>
+                            <th style="width: 40%;">Translation Flavor Distribution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            filteredTenants.forEach(tenantName => {
+                const tenant = hierarchicalData[tenantName];
+                const isExpanded = expandedTenants.has(tenantName);
+
+                // Apply flavor filter to tenant
+                let tenantFlavors = tenant.totalFlavors;
+                if (flavorFilter) {
+                    tenantFlavors = { [flavorFilter]: tenant.totalFlavors[flavorFilter] || 0 };
+                }
+                const tenantTotal = Object.values(tenantFlavors).reduce((a, b) => a + b, 0);
+                if (flavorFilter && tenantTotal === 0) return;
+
+                // Tenant row
+                html += `
+                    <tr class="tenant-row ${isExpanded ? 'expanded' : ''}" data-tenant="${tenantName}">
+                        <td>
+                            <span class="expand-icon">${isExpanded ? '−' : '+'}</span>
+                            <strong>${tenantName}</strong>
+                        </td>
+                        <td><span class="badge">${tenant.branchCount}</span></td>
+                        <td>${tenant.totalRecords}</td>
+                        <td>-</td>
+                        <td>${createFlavorBar(tenantFlavors)}</td>
+                    </tr>
+                `;
+
+                // Branch rows
+                const branches = Object.keys(tenant.branches).sort();
+                const filteredBranches = branches.filter(b =>
+                    b.toLowerCase().includes(searchBranch.toLowerCase())
+                );
+
+                filteredBranches.forEach(branchName => {
+                    const branch = tenant.branches[branchName];
+
+                    // Apply flavor filter to branch
+                    let branchFlavors = branch.flavors;
+                    if (flavorFilter) {
+                        branchFlavors = { [flavorFilter]: branch.flavors[flavorFilter] || 0 };
+                    }
+                    const branchTotal = Object.values(branchFlavors).reduce((a, b) => a + b, 0);
+                    if (flavorFilter && branchTotal === 0) return;
+
+                    html += `
+                        <tr class="branch-row ${isExpanded ? 'visible' : ''}" data-tenant="${tenantName}">
+                            <td>↳ ${branchName}</td>
+                            <td>-</td>
+                            <td>${branch.count}</td>
+                            <td><span class="badge">${branch.cultureGroups.size}</span></td>
+                            <td>${createFlavorBar(branchFlavors)}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Toggle tenant expansion
+        function toggleTenant(tenantName) {
+            if (expandedTenants.has(tenantName)) {
+                expandedTenants.delete(tenantName);
+            } else {
+                expandedTenants.add(tenantName);
+            }
+            renderTable();
+        }
+
+        // Render table
+        function renderTable() {
+            const tenantSearch = document.getElementById('searchTenant').value;
+            const branchSearch = document.getElementById('searchBranch').value;
+            const flavorFilter = document.getElementById('flavorFilter').value;
+
+            const tableHTML = createHierarchicalTable(tenantSearch, branchSearch, flavorFilter);
+            document.getElementById('tableContent').innerHTML = tableHTML;
+
+            // Attach click handlers to tenant rows
+            document.querySelectorAll('.tenant-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const tenant = row.getAttribute('data-tenant');
+                    toggleTenant(tenant);
+                });
+            });
+        }
+
+        // Process loaded data
+        function processData(text) {
+            rawData = parseCSV(text);
+
+            console.log('Parsed rows:', rawData.length);
+            console.log('First row sample:', rawData[0]);
+
+            const aggregated = aggregateHierarchicalData(rawData);
+            hierarchicalData = aggregated.hierarchy;
+
+            console.log('Tenants:', Object.keys(hierarchicalData).length);
+            console.log('Total branches:', aggregated.totalBranches);
+
+            // Update stats
+            document.getElementById('tenantCount').textContent = Object.keys(hierarchicalData).length;
+            document.getElementById('branchCount').textContent = aggregated.totalBranches;
+            document.getElementById('cultureGroupCount').textContent = aggregated.cultureGroups.length;
+            document.getElementById('totalRecords').textContent = rawData.length;
+
+            // Render table
+            renderTable();
+        }
+
+        // Load data from file upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileInfo').textContent = `Loading ${file.name}...`;
+            document.getElementById('tableContent').innerHTML = '<div class="loading">Processing file...</div>';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    processData(e.target.result);
+                    document.getElementById('fileInfo').textContent = `✓ Loaded ${file.name}`;
+                } catch (error) {
+                    document.getElementById('tableContent').innerHTML =
+                        `<div class="error">Error processing file: ${error.message}</div>`;
+                    document.getElementById('fileInfo').textContent = `✗ Error loading ${file.name}`;
+                    console.error(error);
+                }
+            };
+            reader.onerror = function() {
+                document.getElementById('tableContent').innerHTML =
+                    '<div class="error">Error reading file</div>';
+                document.getElementById('fileInfo').textContent = '✗ Error reading file';
+            };
+            reader.readAsText(file);
+        }
+
+        // Try to auto-load CSV file
+        async function autoLoadData() {
+            try {
+                document.getElementById('tableContent').innerHTML =
+                    '<div class="loading">Attempting to auto-load data_processed.csv...<br>If this fails, please use the file upload above.</div>';
+
+                const response = await fetch(CSV_FILE);
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${CSV_FILE}`);
+                }
+
+                const text = await response.text();
+                processData(text);
+                document.getElementById('fileInfo').textContent = `✓ Auto-loaded ${CSV_FILE}`;
+
+            } catch (error) {
+                document.getElementById('tableContent').innerHTML =
+                    `<div class="loading">Please select data_processed.csv using the file upload above</div>`;
+                console.log('Auto-load failed (expected if opening file directly):', error.message);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('csvFile').addEventListener('change', handleFileUpload);
+        document.getElementById('searchTenant').addEventListener('input', renderTable);
+        document.getElementById('searchBranch').addEventListener('input', renderTable);
+        document.getElementById('flavorFilter').addEventListener('change', renderTable);
+
+        document.getElementById('expandAll').addEventListener('click', () => {
+            Object.keys(hierarchicalData).forEach(tenant => expandedTenants.add(tenant));
+            renderTable();
+        });
+
+        document.getElementById('collapseAll').addEventListener('click', () => {
+            expandedTenants.clear();
+            renderTable();
+        });
+
+        // Try to auto-load data on page load
+        autoLoadData();
+    </script>
+</body>
+</html>

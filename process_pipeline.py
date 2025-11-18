@@ -4,9 +4,10 @@ EOL Translation Data Processing Pipeline
 
 Processes data.csv through the complete workflow:
 1. Sort cultures alphabetically
-2. Apply translation flavor logic
-3. Generate pivot table
-4. Create embedded HTML viewer
+2. Populate blank Culture Groups
+3. Apply translation flavor logic
+4. Generate pivot table
+5. Create embedded HTML viewer
 
 Usage: python3 process_pipeline.py
 """
@@ -22,7 +23,7 @@ print("="*80)
 # ============================================================================
 # STEP 1: SORT CULTURES ALPHABETICALLY
 # ============================================================================
-print("\n[STEP 1/4] Sorting cultures alphabetically...")
+print("\n[STEP 1/5] Sorting cultures alphabetically...")
 print("-"*80)
 
 with open('data.csv', 'r', encoding='utf-8-sig') as f:
@@ -53,9 +54,118 @@ print(f"   Output: data_sorted_cultures.csv ({len(rows)} rows)")
 
 
 # ============================================================================
-# STEP 2: APPLY TRANSLATION FLAVOR LOGIC
+# STEP 2: POPULATE BLANK CULTURE GROUPS
 # ============================================================================
-print("\n[STEP 2/4] Applying Translation Flavor logic...")
+print("\n[STEP 2/5] Populating blank Culture Groups...")
+print("-"*80)
+
+# Read the sorted data
+with open('data_sorted_cultures.csv', 'r', encoding='utf-8-sig') as f:
+    reader = csv.DictReader(f)
+    rows = list(reader)
+    fieldnames = reader.fieldnames
+
+# Group rows by tenant for efficient matching
+tenant_data = defaultdict(list)
+for row in rows:
+    tenant = row.get('Tenant', '').strip()
+    if tenant:
+        tenant_data[tenant].append(row)
+
+# Track statistics
+blank_count = 0
+matched_same_tenant_count = 0
+matched_other_tenant_count = 0
+defaulted_count = 0
+matched_details = []
+
+# Process each row to populate blank Culture Groups
+for row in rows:
+    culture_group = row.get('Culture Group', '').strip()
+    
+    if not culture_group:  # Culture Group is blank
+        blank_count += 1
+        tenant = row.get('Tenant', '').strip()
+        branch = row.get('Branch', '').strip()
+        cultures = row.get('Cultures', '').strip('"')
+        
+        # Sort cultures for comparison
+        cultures_sorted = ','.join(sorted([c.strip() for c in cultures.split(',')])) if cultures else ''
+        
+        # STEP 1: Search for matching cultures in OTHER branches of the same tenant
+        match_found = False
+        for other_row in tenant_data[tenant]:
+            if other_row['Branch'] != branch:  # Don't match with same branch
+                other_cultures = other_row.get('Cultures', '').strip('"')
+                other_cultures_sorted = ','.join(sorted([c.strip() for c in other_cultures.split(',')])) if other_cultures else ''
+                other_culture_group = other_row.get('Culture Group', '').strip()
+                
+                if cultures_sorted == other_cultures_sorted and other_culture_group:
+                    # Match found within same tenant!
+                    row['Culture Group'] = other_culture_group
+                    matched_same_tenant_count += 1
+                    matched_details.append(f"  • Branch '{branch[:40]}' → '{other_culture_group}' (same tenant: '{other_row['Branch'][:40]}')")
+                    match_found = True
+                    break
+        
+        # STEP 2: If no match in same tenant, search across ALL other tenants
+        if not match_found:
+            for other_tenant, other_tenant_rows in tenant_data.items():
+                if other_tenant != tenant:  # Different tenant
+                    for other_row in other_tenant_rows:
+                        other_cultures = other_row.get('Cultures', '').strip('"')
+                        other_cultures_sorted = ','.join(sorted([c.strip() for c in other_cultures.split(',')])) if other_cultures else ''
+                        other_culture_group = other_row.get('Culture Group', '').strip()
+                        
+                        if cultures_sorted == other_cultures_sorted and other_culture_group:
+                            # Match found in different tenant!
+                            row['Culture Group'] = other_culture_group
+                            matched_other_tenant_count += 1
+                            matched_details.append(f"  • Branch '{branch[:40]}' → '{other_culture_group}' (other tenant: {other_tenant})")
+                            match_found = True
+                            break
+                    if match_found:
+                        break
+        
+        # STEP 3: If still no match found, apply default: Translation Provider Name + '_' + culture count
+        if not match_found:
+            provider_name = row.get('Translation Provider Name', '').strip()
+            culture_count = len(cultures.split(',')) if cultures else 0
+            default_culture_group = f"{provider_name}_{culture_count}"
+            row['Culture Group'] = default_culture_group
+            defaulted_count += 1
+
+# Write updated data
+with open('data_sorted_cultures.csv', 'w', newline='', encoding='utf-8-sig') as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+
+print(f"✅ Culture Group population completed")
+print(f"   Total blank Culture Groups found: {blank_count}")
+print(f"   Matched from same tenant: {matched_same_tenant_count}")
+print(f"   Matched from other tenants: {matched_other_tenant_count}")
+print(f"   Set to default value: {defaulted_count}")
+
+if matched_details:
+    print(f"\n   Matched branches:")
+    for detail in matched_details[:10]:  # Show first 10
+        print(detail)
+    if len(matched_details) > 10:
+        print(f"   ... and {len(matched_details) - 10} more")
+
+# Verification: Check if any Culture Groups are still blank
+still_blank = sum(1 for row in rows if not row.get('Culture Group', '').strip())
+if still_blank > 0:
+    print(f"\n   ⚠️  WARNING: {still_blank} rows still have blank Culture Groups!")
+else:
+    print(f"\n   ✅ VERIFICATION: All rows now have Culture Groups assigned")
+
+
+# ============================================================================
+# STEP 3: APPLY TRANSLATION FLAVOR LOGIC
+# ============================================================================
+print("\n[STEP 3/5] Applying Translation Flavor logic...")
 print("-"*80)
 
 warnings = []
@@ -138,9 +248,9 @@ for flavor, count in sorted(flavor_counts.items()):
 
 
 # ============================================================================
-# STEP 3: CREATE PIVOT TABLE
+# STEP 4: CREATE PIVOT TABLE
 # ============================================================================
-print("\n[STEP 3/4] Creating pivot table...")
+print("\n[STEP 4/5] Creating pivot table...")
 print("-"*80)
 
 branch_counts = defaultdict(lambda: defaultdict(set))
@@ -250,9 +360,9 @@ print(f"   Output: data_pivot.csv")
 
 
 # ============================================================================
-# STEP 4: CREATE EMBEDDED HTML VIEWER
+# STEP 5: CREATE EMBEDDED HTML VIEWER
 # ============================================================================
-print("\n[STEP 4/4] Creating embedded HTML viewer...")
+print("\n[STEP 5/5] Creating embedded HTML viewer...")
 print("-"*80)
 
 # Read the CSV data
