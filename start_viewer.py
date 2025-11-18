@@ -24,9 +24,9 @@ if not os.path.exists('pivot_viewer.html'):
     print("❌ Error: pivot_viewer.html not found!")
     exit(1)
 
-if not os.path.exists('tenant_culture_group_pivot.csv'):
-    print("❌ Error: tenant_culture_group_pivot.csv not found!")
-    print("Please run create_pivot_final.py first to generate the CSV file.")
+if not os.path.exists('data_pivot.csv'):
+    print("❌ Error: data_pivot.csv not found!")
+    print("Please run process_pipeline.py first to generate the CSV file.")
     exit(1)
 
 print(f"🌐 Starting web server on http://localhost:{PORT}")
