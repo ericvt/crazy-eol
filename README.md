@@ -4,8 +4,6 @@ Interactive visualization of translation flavors across Content tenants, branche
 
 ## 🌐 View Pages
 
-
-
 Matrix showing **Tenants and associated Culture Groups**. Displays also the number of branches and their quality level:
 [tenant_culturegroup.html](https://ericvt.github.io/crazy-eol/local/tenant_culturegroup.html)
 
