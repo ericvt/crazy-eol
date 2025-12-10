@@ -9,7 +9,7 @@ Processes data.csv through the complete workflow:
 4. Generate pivot table
 5. Create embedded HTML viewer
 
-Usage: python3 process_pipeline.py
+Usage: python3 transform_data.py
 """
 
 import csv
@@ -370,7 +370,7 @@ with open('data_pivot.csv', 'r', encoding='utf-8') as f:
     csv_data = f.read()
 
 # Read the HTML template
-with open('pivot_viewer.html', 'r', encoding='utf-8') as f:
+with open('local_pivot/pivot_viewer.html', 'r', encoding='utf-8') as f:
     html_content = f.read()
 
 # Create embedded JavaScript that replaces the async loadCSV function
@@ -389,11 +389,11 @@ pattern = r'// Load and parse CSV\s+async function loadCSV\(\) \{[^}]*\{[^}]*\}[
 html_content = re.sub(pattern, embedded_load_function.strip(), html_content, flags=re.DOTALL)
 
 # Write the self-contained HTML
-with open('pivot_viewer_embedded.html', 'w', encoding='utf-8') as f:
+with open('github/pivot_viewer_embedded.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
 print(f"✅ Embedded viewer created")
-print(f"   Output: pivot_viewer_embedded.html")
+print(f"   Output: github/pivot_viewer_embedded.html")
 
 
 # ============================================================================
@@ -421,8 +421,8 @@ print("="*80)
 print("\nGenerated files:")
 print("  📄 data_processed.csv - Source data with Translation Flavor logic applied")
 print("  📊 data_pivot.csv - Pivot table data")
-print("  🌐 pivot_viewer_embedded.html - Self-contained interactive viewer")
+print("  🌐 github/pivot_viewer_embedded.html - Self-contained interactive viewer")
 print("\nNext steps:")
-print("  • View locally: python3 start_viewer.py")
-print("  • Deploy: Push pivot_viewer_embedded.html to GitHub Pages")
+print("  • View locally: cd local_pivot && python3 start_viewer.py")
+print("  • Deploy: Push github/pivot_viewer_embedded.html to GitHub Pages")
 print("="*80)

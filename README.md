@@ -11,7 +11,7 @@ Visit: https://ericvt.github.io/crazy-eol/pivot_viewer_embedded.html
 Process the data and generate all output files:
 
 ```bash
-python3 process_pipeline.py
+python3 transform_data.py
 ```
 
 View the results locally:
@@ -22,7 +22,7 @@ python3 start_viewer.py
 
 ## 🔄 Data Pipeline
 
-The `process_pipeline.py` script processes `data.csv` through 4 automated steps:
+The `transform_data.py` script processes `data.csv` through 4 automated steps:
 
 1. **Sort Cultures** - Alphabetically sorts culture codes within each branch
 2. **Apply Translation Flavor** - Assigns flavor based on QE/AIPE and HPE flags
@@ -56,7 +56,8 @@ The `process_pipeline.py` script processes `data.csv` through 4 automated steps:
 - `data.csv` - Input data file
 
 **Scripts:**
-- `process_pipeline.py` - Main processing pipeline
+
+- `transform_data.py` - Main processing pipeline
 - `start_viewer.py` - Local development server
 
 **Generated:**
@@ -77,5 +78,5 @@ The `pivot_viewer_embedded.html` file is self-contained and can be:
 To modify the visualization, edit `pivot_viewer.html` and regenerate:
 
 ```bash
-python3 process_pipeline.py
+python3 transform_data.py
 ```

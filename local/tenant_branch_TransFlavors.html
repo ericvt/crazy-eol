@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tenant-Branch Hierarchical View</title>
+    <title>Tenant-Branch Translation Flavors</title>
     <style>
         * {
             margin: 0;
@@ -28,46 +28,27 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 8px 15px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 1.8em;
-            margin-bottom: 10px;
+            font-size: 1em;
+            margin: 0;
+        }
+
+        .header p {
+            display: none;
         }
 
         .file-upload {
-            padding: 15px 20px;
-            background: #e7f3ff;
-            border-bottom: 2px solid #667eea;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .file-upload label {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .file-upload input[type="file"] {
-            padding: 8px 12px;
-            border: 2px solid #667eea;
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-        }
-
-        .file-upload .file-info {
-            color: #28a745;
-            font-weight: 500;
+            display: none;
         }
 
         .stats {
             display: flex;
-            gap: 15px;
-            padding: 15px 20px;
+            gap: 8px;
+            padding: 6px 12px;
             background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
             flex-wrap: wrap;
@@ -75,58 +56,57 @@
 
         .stat-card {
             text-align: center;
-            padding: 10px 20px;
+            padding: 4px 12px;
             background: white;
-            border-radius: 6px;
+            border-radius: 4px;
             border: 1px solid #dee2e6;
             flex: 1;
-            min-width: 120px;
+            min-width: 80px;
         }
 
         .stat-card .number {
-            font-size: 1.6em;
+            font-size: 1em;
             font-weight: bold;
             color: #667eea;
         }
 
         .stat-card .label {
             color: #6c757d;
-            margin-top: 5px;
-            font-size: 0.85em;
+            margin-top: 2px;
+            font-size: 0.7em;
         }
 
         .controls {
             display: flex;
-            gap: 15px;
-            padding: 15px 20px;
+            gap: 10px;
+            padding: 6px 12px;
             background: #fff;
-            border-bottom: 2px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
             flex-wrap: wrap;
             align-items: center;
         }
 
-        .controls input, .controls select, .controls button {
-            padding: 10px 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 14px;
+        .controls input, .controls select {
+            padding: 4px 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 11px;
         }
 
         .controls input {
             flex: 1;
-            min-width: 200px;
+            min-width: 150px;
         }
 
-        .controls button {
-            background: #667eea;
-            color: white;
-            border: none;
-            cursor: pointer;
+        .controls label {
+            font-size: 11px;
+            color: #495057;
             font-weight: 500;
         }
 
-        .controls button:hover {
-            background: #5568d3;
+        .controls input:focus, .controls select:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .filter-group {
@@ -136,53 +116,59 @@
         }
 
         .legend {
-            padding: 15px 20px;
+            padding: 6px 12px;
             background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: none;
+            margin: 0;
         }
 
         .legend-title {
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
             color: #495057;
+            font-size: 11px;
         }
 
         .legend-items {
             display: flex;
-            gap: 20px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
+            gap: 4px;
+            font-size: 10px;
         }
 
         .legend-color {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
             border: 1px solid #ddd;
         }
 
         .table-container {
             overflow: auto;
-            max-height: calc(100vh - 450px);
+            max-height: calc(100vh - 140px);
+            margin: 0;
+            padding: 0;
         }
 
         .hierarchical-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
+            font-size: 10px;
+            border-spacing: 0;
         }
 
         .hierarchical-table thead th {
             background: #f8f9fa;
-            padding: 12px;
+            padding: 6px;
             text-align: left;
             border-bottom: 2px solid #dee2e6;
+            border-top: none;
             font-weight: 600;
             color: #495057;
             position: sticky;
@@ -214,8 +200,13 @@
         }
 
         .tenant-row td {
-            padding: 12px;
+            padding: 4px 6px;
             font-weight: 500;
+        }
+
+        .tenant-row td:first-child,
+        .branch-row td:first-child {
+            text-align: left;
         }
 
         .branch-row {
@@ -228,34 +219,34 @@
         }
 
         .branch-row td {
-            padding: 10px 12px 10px 40px;
-            font-size: 13px;
+            padding: 4px 6px 4px 24px;
+            font-size: 10px;
         }
 
         .expand-icon {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
+            width: 14px;
+            height: 14px;
+            margin-right: 4px;
             text-align: center;
-            line-height: 20px;
-            border-radius: 4px;
+            line-height: 14px;
+            border-radius: 3px;
             background: #667eea;
             color: white;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 10px;
             vertical-align: middle;
         }
 
         .flavor-bar-container {
             display: flex;
-            gap: 4px;
-            height: 24px;
-            border-radius: 4px;
+            gap: 2px;
+            height: 16px;
+            border-radius: 3px;
             overflow: hidden;
             background: #e9ecef;
-            min-width: 200px;
-            max-width: 400px;
+            min-width: 120px;
+            max-width: 300px;
         }
 
         .flavor-segment {
@@ -263,10 +254,10 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 11px;
+            font-size: 8px;
             font-weight: bold;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            min-width: 20px;
+            min-width: 14px;
         }
 
         /* Color scheme for TranslationFlavor */
@@ -278,11 +269,11 @@
 
         .badge {
             display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
+            padding: 2px 6px;
+            border-radius: 8px;
             background: #e7f3ff;
             color: #667eea;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 600;
         }
 
@@ -318,7 +309,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Tenant-Branch Hierarchical View</h1>
+            <h1>Tenant-Branch Translation Flavors</h1>
             <p>Click on tenants to expand and view branches</p>
         </div>
 
@@ -376,23 +367,23 @@
             <div class="legend-items">
                 <div class="legend-item">
                     <div class="legend-color flavor-MT"></div>
-                    <span>MT - Machine Translation (Red)</span>
+                    <span>MT</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color flavor-AIPE"></div>
-                    <span>AIPE - AI-Powered Enhancement (Orange)</span>
+                    <span>AIPE</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color flavor-MTPE"></div>
-                    <span>MTPE - Machine Translation Post-Editing (Light Green)</span>
+                    <span>MTPE</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color flavor-HPE"></div>
-                    <span>HPE - High Performance Enhancement (Green)</span>
+                    <span>HPE</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color flavor-HT"></div>
-                    <span>HT - Human Translation (Dark Green)</span>
+                    <span>HT</span>
                 </div>
             </div>
         </div>
@@ -406,7 +397,7 @@
 
     <script>
         // Configuration
-        const CSV_FILE = 'data_processed.csv';
+        const CSV_FILE = '../data_processed.csv';
 
         // Global data storage
         let rawData = [];
@@ -543,8 +534,8 @@
                         <tr>
                             <th style="width: 30%;">Name</th>
                             <th style="width: 10%;">Branches</th>
-                            <th style="width: 10%;">Records</th>
                             <th style="width: 10%;">Culture Groups</th>
+                            <th style="width: 10%;">Culture Group/Translation Flavors combo</th>
                             <th style="width: 40%;">Translation Flavor Distribution</th>
                         </tr>
                     </thead>
@@ -571,8 +562,8 @@
                             <strong>${tenantName}</strong>
                         </td>
                         <td><span class="badge">${tenant.branchCount}</span></td>
-                        <td>${tenant.totalRecords}</td>
                         <td>-</td>
+                        <td>${tenant.totalRecords}</td>
                         <td>${createFlavorBar(tenantFlavors)}</td>
                     </tr>
                 `;
@@ -598,8 +589,8 @@
                         <tr class="branch-row ${isExpanded ? 'visible' : ''}" data-tenant="${tenantName}">
                             <td>↳ ${branchName}</td>
                             <td>-</td>
-                            <td>${branch.count}</td>
                             <td><span class="badge">${branch.cultureGroups.size}</span></td>
+                            <td>${branch.count}</td>
                             <td>${createFlavorBar(branchFlavors)}</td>
                         </tr>
                     `;
