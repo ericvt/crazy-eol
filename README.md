@@ -1,28 +1,29 @@
-# EOL Translation Pivot Table
+# Content EOL Viewer
 
-Interactive visualization of translation flavors across tenants and culture groups.
+Interactive visualization of translation flavors across Content tenants, branches and culture groups.
 
-## 🌐 View Online
+## 🌐 View Pages
 
-Visit: https://ericvt.github.io/crazy-eol/pivot_viewer_embedded.html
 
-## 📋 Quick Start
 
-Process the data and generate all output files:
+Matrix showing **Tenants and associated Culture Groups**. Displays also the number of branches and their quality level:
+[tenant_culturegroup.html](local/tenant_culturegroup.html)
 
-```bash
-python3 transform_data.py
-```
+Table showing the **Translation Flavor distribution for Tenants and Branches**
+[tenant_branch_transflavors.html](local/tenant_branch_TransFlavors.html)
 
-View the results locally:
+Table showing **Cultures and Translation Flavors for each Branch**
+[branch_culture.html](local/branch_culture.html)
 
-```bash
-python3 start_viewer.py
-```
 
 ## 🔄 Data Pipeline
 
-The `transform_data.py` script processes `data.csv` through 4 automated steps:
+data.csv is the output from the Jupiter Tenant and Branch Config PBI report
+
+> ⚠️ **Note:** data.csv is not automatically generated, so the current version on this repo may be outdated.
+
+### Transform Raw Data
+`transform_data.py` script processes `data.csv` through 4 automated steps:
 
 1. **Sort Cultures** - Alphabetically sorts culture codes within each branch
 2. **Apply Translation Flavor** - Assigns flavor based on QE/AIPE and HPE flags
@@ -56,27 +57,28 @@ The `transform_data.py` script processes `data.csv` through 4 automated steps:
 - `data.csv` - Input data file
 
 **Scripts:**
-
 - `transform_data.py` - Main processing pipeline
-- `start_viewer.py` - Local development server
+- `start_server.sh` - Local development server
 
 **Generated:**
 - `data_processed.csv` - Processed source data with Translation Flavor logic applied
 - `data_pivot.csv` - Pivot table data
-- `pivot_viewer_embedded.html` - Self-contained interactive viewer
-- `pivot_viewer.html` - Viewer template (requires server)
 
-## 🚀 Deployment
+**HTML Viewers (in `local/` folder):**
+- `tenant_branch_TransFlavors.html` - Tenant-Branch Translation Flavors view
+- `branch_culture.html` - Content Branch-Culture view
+- `tenant_culturegroup.html` - Content Tenant-Culture Group Associations view
 
-The `pivot_viewer_embedded.html` file is self-contained and can be:
-- Opened directly in any web browser
-- Hosted on GitHub Pages
-- Shared without requiring data files or a web server
+## 🛠️ Run-it locally
 
-## 🛠️ Development
-
-To modify the visualization, edit `pivot_viewer.html` and regenerate:
+To view the pages locally, run:
 
 ```bash
-python3 transform_data.py
+./start_server.sh
 ```
+
+Then open your browser to:
+- http://localhost:8000/local/tenant_branch_TransFlavors.html
+- http://localhost:8000/local/branch_culture.html
+- http://localhost:8000/local/tenant_culturegroup.html
+
