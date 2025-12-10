@@ -5,13 +5,13 @@ Interactive visualization of translation flavors across Content tenants, branche
 ## 🌐 View Pages
 
 Matrix showing **Tenants and associated Culture Groups**. Displays also the number of branches and their quality level:
-[tenant_culturegroup.html](https://ericvt.github.io/crazy-eol/local/tenant_culturegroup.html)
+[tenant_culturegroup.html](https://growth-ecosystems.github.io/crazy-eol/local/tenant_culturegroup.html)
 
 Table showing the **Translation Flavor distribution for Tenants and Branches**
-[tenant_branch_transflavors.html](https://ericvt.github.io/crazy-eol/local/tenant_branch_TransFlavors.html)
+[tenant_branch_transflavors.html](https://growth-ecosystems.github.io/crazy-eol/local/tenant_branch_TransFlavors.html)
 
 Table showing **Cultures and Translation Flavors for each Branch**
-[branch_culture.html](https://ericvt.github.io/crazy-eol/local/branch_culture.html)
+[branch_culture.html](https://growth-ecosystems.github.io/crazy-eol/local/branch_culture.html)
 
 
 ## 🔄 Data Pipeline
