@@ -67,7 +67,7 @@ data.csv is the output from the Jupiter Tenant and Branch Config PBI report
 
 **HTML Viewers (in `local/` folder):**
 
-- `tenant_branch_TransFlavors.html` - Tenant-Branch Translation Flavors view
+- `tenant_branch_transflavors.html` - Tenant-Branch Translation Flavors view
 - `branch_culture.html` - Content Branch-Culture view
 - `tenant_culturegroup.html` - Content Tenant-Culture Group Associations view
 
