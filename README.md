@@ -8,11 +8,10 @@ Matrix showing **Tenants and associated Culture Groups**. Displays also the numb
 [tenant_culturegroup.html](https://growth-ecosystems.github.io/crazy-eol/local/tenant_culturegroup.html)
 
 Table showing the **Translation Flavor distribution for Tenants and Branches**
-[tenant_branch_transflavors.html](https://growth-ecosystems.github.io/crazy-eol/local/tenant_branch_TransFlavors.html)
+[tenant_branch_transflavors.html](https://growth-ecosystems.github.io/crazy-eol/local/tenant_branch_transflavors.html)
 
 Table showing **Cultures and Translation Flavors for each Branch**
 [branch_culture.html](https://growth-ecosystems.github.io/crazy-eol/local/branch_culture.html)
-
 
 ## 🔄 Data Pipeline
 
@@ -21,6 +20,7 @@ data.csv is the output from the Jupiter Tenant and Branch Config PBI report
 > ⚠️ **Note:** data.csv is not automatically generated, so the current version on this repo may be outdated.
 
 ### Transform Raw Data
+
 `transform_data.py` script processes `data.csv` through 4 automated steps:
 
 1. **Sort Cultures** - Alphabetically sorts culture codes within each branch
@@ -52,31 +52,38 @@ data.csv is the output from the Jupiter Tenant and Branch Config PBI report
 ## 📂 Files
 
 **Source:**
+
 - `data.csv` - Input data file
 
 **Scripts:**
+
 - `transform_data.py` - Main processing pipeline
 - `start_server.sh` - Local development server
 
 **Generated:**
+
 - `data_processed.csv` - Processed source data with Translation Flavor logic applied
 - `data_pivot.csv` - Pivot table data
 
 **HTML Viewers (in `local/` folder):**
+
 - `tenant_branch_TransFlavors.html` - Tenant-Branch Translation Flavors view
 - `branch_culture.html` - Content Branch-Culture view
 - `tenant_culturegroup.html` - Content Tenant-Culture Group Associations view
 
 ## 🛠️ Run-it locally
 
+Clone the repo [https://github.com/growth-ecosystems/crazy-eol.git](https://github.com/growth-ecosystems/crazy-eol.git)
+
 To view the pages locally, run:
 
 ```bash
-./start_server.sh
+./start_server.sh on Mac or start_server.bat on Windows
 ```
 
 Then open your browser to:
-- http://localhost:8000/local/tenant_branch_TransFlavors.html
-- http://localhost:8000/local/branch_culture.html
-- http://localhost:8000/local/tenant_culturegroup.html
+
+- [http://localhost:8000/local/tenant_branch_transflavors.html](http://localhost:8000/local/tenant_branch_transflavors.html)
+- [http://localhost:8000/local/branch_culture.html](http://localhost:8000/local/branch_culture.html)
+- [http://localhost:8000/local/tenant_culturegroup.html](http://localhost:8000/local/tenant_culturegroup.html)
 
